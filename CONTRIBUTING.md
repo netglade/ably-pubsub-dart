@@ -1,4 +1,4 @@
-# Contributing to ably-dart
+# Contributing to ably-pubsub-dart
 
 ## Contributing
 
