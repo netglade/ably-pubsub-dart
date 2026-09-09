@@ -1,5 +1,5 @@
 [![pub package](https://img.shields.io/pub/v/ably.svg)](https://pub.dev/packages/ably)
-[![License](https://img.shields.io/github/license/ably/ably-dart)](https://github.com/ably/ably-dart/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/ably/ably-pubsub-dart)](https://github.com/ably/ably-pubsub-dart/blob/main/LICENSE)
 
 ---
 
@@ -118,4 +118,4 @@ The [CHANGELOG.md](./CHANGELOG.md) contains details of the latest releases for t
 
 ## Support, feedback, and troubleshooting
 
-For help or technical support, visit Ably's [support page](https://ably.com/support) or [GitHub Issues](https://github.com/ably/ably-dart/issues) for community-reported bugs and discussions.
+For help or technical support, visit Ably's [support page](https://ably.com/support) or [GitHub Issues](https://github.com/ably/ably-pubsub-dart/issues) for community-reported bugs and discussions.
