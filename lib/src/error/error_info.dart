@@ -3,7 +3,7 @@ import 'package:meta/meta.dart';
 
 /// Contains error information returned from Ably.
 ///
-/// Spec: TI1, TI2
+/// Spec: TI1, TI2, TI6
 @immutable
 class ErrorInfo implements Exception {
   /// Creates an ErrorInfo instance.
