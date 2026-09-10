@@ -8,25 +8,18 @@ licensed under the Apache License, Version 2.0 (see LICENSE).
 MODIFICATIONS BY NETGLADE
 
 This is a modified copy of ably/ably-pubsub-dart, forked at commit
-50358867d41d6f72b000872d742eaacc8f1530d7 (byte-identical to the published
-`ably` 0.2.0 release). It is maintained by netglade for the Ably Chat
+50358867d41d6f72b000872d742eaacc8f1530d7. `lib/` at that commit is
+source-identical to the published `ably` 0.2.0 release; the two commits
+between the published `v0.2.0` tag and this fork point touch only
+README.md, CONTRIBUTING.md and pubspec.yaml's repository URLs (a repo
+rename), never `lib/`. It is maintained by netglade for the Ably Chat
 Flutter SDK. Every change is also offered upstream as a pull request, one
-patch per branch, landing on this integration branch
-(netglade/chat-v0.2.0) progressively as each completes; see PATCHES.md for
-the per-patch branch, commit and PR.
+patch per branch; all five have landed on this integration branch
+(netglade/chat-v0.2.0). See PATCHES.md for the per-patch branch, commit
+and upstream PR status.
 
-The following files have been added by netglade as of this commit:
-
-  NOTICE
-  PATCHES.md
-
-The patch set enumerated in PATCHES.md additionally modifies and adds the
-files listed below. This is the full intended scope of the patch set, not
-a record of what has landed yet — check PATCHES.md's Commit/Merged columns,
-or `git log -- <path>` on this branch, for which of these a given checkout
-actually contains.
-
-Modified, once each patch lands:
+The following files have been modified by netglade to implement the
+patch set enumerated in PATCHES.md:
 
   lib/src/error/error_info.dart
   lib/src/impl/connection_impl.dart
@@ -40,11 +33,30 @@ Modified, once each patch lands:
   lib/src/realtime/protocol_message.dart
   test/realtime/unit/connection/forwards_compatibility_test.dart
 
-Added, once each patch lands:
+The following files have been added by netglade to implement and test
+that patch set:
 
+  NOTICE
+  PATCHES.md
   test/realtime/unit/channels/channel_attach_connection_wait_test.dart
   test/realtime/unit/channels/channel_message_version_annotations_test.dart
   test/realtime/unit/channels/channels_release_test.dart
   test/realtime/unit/connection/unknown_wire_actions_test.dart
   test/rest/unit/types/error_detail_test.dart
+
+One further test file is added on this integration branch only — it is
+not part of any single patch above and so is never itself raised as an
+upstream PR, but exercises patches A and E together (see PATCHES.md and
+docs/fork.md's no-regression evidence):
+
+  test/realtime/unit/channels/channel_unknown_action_and_version_annotations_test.dart
+
+`pubspec.yaml`'s version is additionally stamped `0.2.0+netglade.1` (not
+part of any patch), so `pubspec.lock` and `dart pub deps` in the chat
+workspace identify this fork rather than upstream 0.2.0.
+
+A patch's Merged? column in PATCHES.md becomes `yes` once Ably accepts it
+upstream, at which point docs/fork.md's re-verification procedure removes
+that patch's files from the lists above; `git log -- <path>` on this
+branch always shows a given file's own history.
 --------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 name: ably
 description: Ably REST SDK for Dart - A pure Dart implementation of the Ably REST API.
-version: 0.2.0
+version: 0.2.0+netglade.1
 homepage: https://github.com/ably/ably-pubsub-dart
 repository: https://github.com/ably/ably-pubsub-dart
 
