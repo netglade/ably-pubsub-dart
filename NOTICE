@@ -1,0 +1,39 @@
+Ably Pub/Sub Dart SDK (package:ably)
+Copyright 2024-2025 Ably Real-time Ltd (ably.com)
+
+This product includes software developed by Ably Real-time Ltd,
+licensed under the Apache License, Version 2.0 (see LICENSE).
+
+--------------------------------------------------------------------------
+MODIFICATIONS BY NETGLADE
+
+This is a modified copy of ably/ably-pubsub-dart, forked at commit
+50358867d41d6f72b000872d742eaacc8f1530d7 (byte-identical to the published
+`ably` 0.2.0 release). It is maintained by netglade for the Ably Chat
+Flutter SDK. Every change is also offered upstream as a pull request; see
+PATCHES.md for the per-patch branch, commit and PR.
+
+The following files have been modified by netglade:
+
+  lib/src/error/error_info.dart
+  lib/src/impl/connection_impl.dart
+  lib/src/impl/realtime_annotations_impl.dart
+  lib/src/impl/realtime_channel_impl.dart
+  lib/src/impl/realtime_channels_impl.dart
+  lib/src/impl/realtime_presence_impl.dart
+  lib/src/message/annotation_action.dart
+  lib/src/message/message_action.dart
+  lib/src/presence/presence_action.dart
+  lib/src/realtime/protocol_message.dart
+  test/realtime/unit/connection/forwards_compatibility_test.dart
+
+The following files have been added by netglade:
+
+  NOTICE
+  PATCHES.md
+  test/realtime/unit/channels/channel_attach_connection_wait_test.dart
+  test/realtime/unit/channels/channel_message_version_annotations_test.dart
+  test/realtime/unit/channels/channels_release_test.dart
+  test/realtime/unit/connection/unknown_wire_actions_test.dart
+  test/rest/unit/types/error_detail_test.dart
+--------------------------------------------------------------------------
