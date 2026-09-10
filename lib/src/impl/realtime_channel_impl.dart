@@ -647,7 +647,36 @@ class RealtimeChannelImpl implements RealtimeChannel {
       if (_connection.state == ConnectionState.initialized) {
         unawaited(_connection.connect());
       }
-      await _connection.on(ConnectionEvent.connected).first;
+
+      // RTL4i deliberately puts no timeout on this wait: an attach issued
+      // while the connection is INITIALIZED, CONNECTING or DISCONNECTED
+      // stays pending until RTL3d sends the ATTACH. But the connection can
+      // also settle where RTL4b forbids an attach, and awaiting only
+      // ConnectionEvent.connected leaves attach() pending forever in exactly
+      // those cases. Race them, plus the attach completer, which
+      // handleConnectionFailed (RTL3a), handleConnectionClosed (RTL3b) and
+      // handleConnectionSuspended (RTL3c) already complete with an error.
+      await Future.any<void>([
+        _connection.on(ConnectionEvent.connected).first,
+        _connection.on(ConnectionEvent.failed).first,
+        _connection.on(ConnectionEvent.closing).first,
+        _connection.on(ConnectionEvent.closed).first,
+        _connection.on(ConnectionEvent.suspended).first,
+        completer.future,
+      ]);
+
+      // RTL4b: the connection settled somewhere an ATTACH cannot be sent.
+      if (_connection.state != ConnectionState.connected) {
+        _attachCompleter = null;
+        completer.future.ignore();
+        throw AblyException(
+          errorInfo: ErrorInfo(
+            code: 90001,
+            message: 'Cannot attach when connection is ${_connection.state}',
+            statusCode: 400,
+          ),
+        );
+      }
     }
 
     _sendAttachMessage();
