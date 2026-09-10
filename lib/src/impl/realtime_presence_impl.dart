@@ -383,6 +383,15 @@ class RealtimePresenceImpl implements RealtimePresence {
           ? raw
           : PresenceMessage.fromMap(raw as Map<String, dynamic>);
 
+      // RTF1: an unrecognised or absent action is ignored with a log
+      // rather than thrown. CHA-M4m5 fixes the level at INFO.
+      if (msg.action == null) {
+        _logger.info('Ignoring presence message with unrecognised action', {
+          'channel': _channelName,
+        });
+        continue;
+      }
+
       _processPresenceMessage(msg);
     }
   }
@@ -410,6 +419,15 @@ class RealtimePresenceImpl implements RealtimePresence {
         final msg = raw is PresenceMessage
             ? raw
             : PresenceMessage.fromMap(raw as Map<String, dynamic>);
+
+        // RTF1: an unrecognised or absent action is ignored with a log
+        // rather than thrown. CHA-M4m5 fixes the level at INFO.
+        if (msg.action == null) {
+          _logger.info('Ignoring SYNC member with unrecognised action', {
+            'channel': _channelName,
+          });
+          continue;
+        }
 
         // During sync, process as put (PRESENT/ENTER/UPDATE) or remove (LEAVE)
         if (msg.action == PresenceAction.leave ||

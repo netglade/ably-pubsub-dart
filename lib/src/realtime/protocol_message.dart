@@ -57,13 +57,11 @@ extension ProtocolActionExtension on ProtocolAction {
   int toInt() => _toWire[this]!;
 
   /// Creates action from integer.
-  static ProtocolAction fromInt(int value) {
-    final action = _fromWire[value];
-    if (action == null) {
-      throw ArgumentError('Invalid protocol action: $value');
-    }
-    return action;
-  }
+  ///
+  /// Returns `null` for a value this SDK does not recognise (RTF1), so a
+  /// future protocol action degrades instead of throwing from inside the
+  /// transport handler. Callers must ignore-with-log.
+  static ProtocolAction? fromInt(int value) => _fromWire[value];
 }
 
 /// Protocol message for WebSocket communication with Ably.
