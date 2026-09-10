@@ -10,10 +10,23 @@ MODIFICATIONS BY NETGLADE
 This is a modified copy of ably/ably-pubsub-dart, forked at commit
 50358867d41d6f72b000872d742eaacc8f1530d7 (byte-identical to the published
 `ably` 0.2.0 release). It is maintained by netglade for the Ably Chat
-Flutter SDK. Every change is also offered upstream as a pull request; see
-PATCHES.md for the per-patch branch, commit and PR.
+Flutter SDK. Every change is also offered upstream as a pull request, one
+patch per branch, landing on this integration branch
+(netglade/chat-v0.2.0) progressively as each completes; see PATCHES.md for
+the per-patch branch, commit and PR.
 
-The following files have been modified by netglade:
+The following files have been added by netglade as of this commit:
+
+  NOTICE
+  PATCHES.md
+
+The patch set enumerated in PATCHES.md additionally modifies and adds the
+files listed below. This is the full intended scope of the patch set, not
+a record of what has landed yet — check PATCHES.md's Commit/Merged columns,
+or `git log -- <path>` on this branch, for which of these a given checkout
+actually contains.
+
+Modified, once each patch lands:
 
   lib/src/error/error_info.dart
   lib/src/impl/connection_impl.dart
@@ -27,10 +40,8 @@ The following files have been modified by netglade:
   lib/src/realtime/protocol_message.dart
   test/realtime/unit/connection/forwards_compatibility_test.dart
 
-The following files have been added by netglade:
+Added, once each patch lands:
 
-  NOTICE
-  PATCHES.md
   test/realtime/unit/channels/channel_attach_connection_wait_test.dart
   test/realtime/unit/channels/channel_message_version_annotations_test.dart
   test/realtime/unit/channels/channels_release_test.dart
