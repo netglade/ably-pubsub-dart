@@ -47,6 +47,17 @@ void main() {
       });
       expect(pm.action, isNull);
       expect(pm.channel, equals('test-RTF1'));
+      // The raw wire value is retained so ignore-with-log guards can
+      // distinguish "unrecognised" from "the wire never sent an action".
+      expect(pm.unrecognisedAction, equals(254));
+    });
+
+    test(
+        'ProtocolMessage.fromJson leaves unrecognisedAction null when the '
+        'wire never sent an action', () {
+      final pm = ProtocolMessage.fromJson({'channel': 'test-RTF1'});
+      expect(pm.action, isNull);
+      expect(pm.unrecognisedAction, isNull);
     });
   });
 
@@ -120,8 +131,9 @@ void main() {
   });
 
   group('RTF1 - unknown presence action is neither thrown nor delivered', () {
-    test('the presence member is dropped and the channel stays ATTACHED',
-        () async {
+    test(
+        'the unknown member is dropped, a known one and an actionless one '
+        'are still delivered, and the drop is logged at INFO', () async {
       final channelName = testChannelName('RTF1-presence-action');
 
       late final MockWebSocketClient mockWs;
@@ -138,10 +150,20 @@ void main() {
         },
       );
 
+      final ignoreLogs = <Map<String, dynamic>>[];
       final client = RealtimeClient.forTesting(
         options: ClientOptions(
           key: 'appId.keyId:keySecret',
           autoConnect: false,
+          logLevel: LogLevel.info,
+          logHandler: (level, message, context) {
+            if (level == LogLevel.info &&
+                message ==
+                    'Ignoring presence message with unrecognised '
+                        'action') {
+              ignoreLogs.add(context);
+            }
+          },
         ),
         webSocketClient: mockWs,
       );
@@ -171,11 +193,120 @@ void main() {
               'connectionId': 'c1',
               'id': 'c1:0:0',
             },
+            // Positive control: a known action in the same batch must
+            // still arrive, so the empty-unless-dropped assertion below
+            // is load-bearing rather than trivially true.
+            <String, dynamic>{
+              'action': 2, // enter
+              'clientId': 'bob',
+              'connectionId': 'c1',
+              'id': 'c1:0:1',
+            },
+            // Regression control: RTF1 only degrades a wire value this
+            // SDK cannot recognise — a member that never carried an
+            // action field at all must be delivered exactly as it was
+            // before this patch, not swept up by the same guard.
+            <String, dynamic>{
+              'clientId': 'carol',
+              'connectionId': 'c1',
+              'id': 'c1:0:2',
+            },
           ],
         ),
       );
 
-      expect(received, isEmpty);
+      expect(
+        received.map((m) => m.clientId).toList(),
+        equals(['bob', 'carol']),
+      );
+      expect(channel.state, equals(ChannelState.attached));
+      expect(client.connection.state, equals(ConnectionState.connected));
+
+      // CHA-M4m5: the ignored member is logged at INFO, naming the raw
+      // action value that this SDK could not decode.
+      expect(ignoreLogs, hasLength(1));
+      expect(ignoreLogs.single['action'], equals(99));
+
+      mockWs.dispose();
+    });
+  });
+
+  group('RTF1 - unknown SYNC member is neither thrown nor delivered', () {
+    test(
+        'the unknown member is dropped from the synced presence set, '
+        'others are kept', () async {
+      final channelName = testChannelName('RTF1-sync-action');
+
+      late final MockWebSocketClient mockWs;
+      mockWs = MockWebSocketClient(
+        onConnectionAttempt: (conn) {
+          conn.respondWithSuccess(ProtocolMessageHelpers.connected());
+        },
+        onMessageFromClient: (msg) {
+          if (msg.action == ProtocolAction.attach) {
+            mockWs.activeConnection!.sendToClient(
+              ProtocolMessageHelpers.attached(
+                channel: channelName,
+                flags: flagHasPresence,
+              ),
+            );
+          }
+        },
+      );
+
+      final client = RealtimeClient.forTesting(
+        options: ClientOptions(
+          key: 'appId.keyId:keySecret',
+          autoConnect: false,
+        ),
+        webSocketClient: mockWs,
+      );
+
+      final channel = client.channels.get(
+        channelName,
+        const RealtimeChannelOptions(attachOnSubscribe: false),
+      );
+
+      client.connect();
+      await _awaitConnectionState(client.connection, ConnectionState.connected);
+      await channel.attach();
+
+      mockWs.activeConnection!.sendToClient(
+        ProtocolMessage(
+          action: ProtocolAction.sync,
+          channel: channelName,
+          channelSerial: 'sync:',
+          presence: [
+            <String, dynamic>{
+              'action': 99,
+              'clientId': 'alice',
+              'connectionId': 'c1',
+              'id': 'c1:0:0',
+            },
+            // Positive control: a known member in the same SYNC must
+            // still end up in the presence set.
+            <String, dynamic>{
+              'action': 2, // enter
+              'clientId': 'bob',
+              'connectionId': 'c1',
+              'id': 'c1:0:1',
+            },
+            // Regression control: a member with no action field at all
+            // must still be synced in, exactly as before this patch.
+            <String, dynamic>{
+              'clientId': 'carol',
+              'connectionId': 'c1',
+              'id': 'c1:0:2',
+            },
+          ],
+        ),
+      );
+
+      final members = await channel.presence.get();
+      expect(
+        members.map((m) => m.clientId).toSet(),
+        equals({'bob', 'carol'}),
+      );
       expect(channel.state, equals(ChannelState.attached));
       expect(client.connection.state, equals(ConnectionState.connected));
 
