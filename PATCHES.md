@@ -13,9 +13,15 @@ raised as a standalone upstream PR.
 
 The table is complete: every patch names its commit, and either its
 upstream PR URL or, until the deferred GitHub hand-off in `docs/fork.md`
-opens it, "not yet opened".
+opens it, the exact sentinel "not yet opened".
 
-| | Defect | Evidence (upstream line numbers) | Fix | Branch | Commit | Upstream PR | Merged? |
+`Commit` is each branch's current **tip**, not necessarily its whole
+patch: branches b, c, d and e each carry two commits (the original patch
+plus one review fix round; only branch a is a single commit — see
+`docs/fork.md`'s "Fork maintenance notes"), so read a branch's own log
+for its full history, not just the sha cited here.
+
+| | Defect | Evidence (upstream line numbers) | Fix | Branch | Commit (tip) | Upstream PR | Merged? |
 |---|---|---|---|---|---|---|---|
 | A | Realtime-delivered `Message` drops `version` and `annotations` | `lib/src/impl/realtime_channel_impl.dart:1100-1112` hand-builds `Message` with nine named args, omitting both, bypassing the TM2s1/TM2s2/TM2u defaults at `lib/src/message/message.dart:51-72` | Additive patch at the call site | `patch/a-realtime-message-version-annotations` | `4c9013207838` | not yet opened | no |
 | B | `attach()` never settles when the connection settles in a terminal state | `lib/src/impl/realtime_channel_impl.dart:650` awaits `_connection.on(connected).first` only, with no FAILED/CLOSING/CLOSED/SUSPENDED branch, so an RTL4b outcome leaves the caller parked forever even though `_failPendingOperations` has already errored the attach completer | `Future.any` over connected plus the four terminal connection events plus the attach completer, with an RTL4b state re-check afterwards | `patch/b-attach-connection-wait` | `976d1b126358` | not yet opened | no |
