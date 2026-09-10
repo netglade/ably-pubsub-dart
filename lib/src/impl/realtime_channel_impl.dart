@@ -26,7 +26,6 @@ import '../realtime/channel_event.dart';
 import '../realtime/channel_mode.dart';
 import '../realtime/channel_state.dart';
 import '../realtime/channel_state_change.dart';
-import '../realtime/connection_event.dart';
 import '../realtime/connection_state.dart';
 import '../realtime/protocol_message.dart';
 import '../realtime/publish_result.dart';
@@ -651,24 +650,61 @@ class RealtimeChannelImpl implements RealtimeChannel {
       // RTL4i deliberately puts no timeout on this wait: an attach issued
       // while the connection is INITIALIZED, CONNECTING or DISCONNECTED
       // stays pending until RTL3d sends the ATTACH. But the connection can
-      // also settle where RTL4b forbids an attach, and awaiting only
-      // ConnectionEvent.connected leaves attach() pending forever in exactly
-      // those cases. Race them, plus the attach completer, which
+      // also settle where RTL4b forbids an attach, and waiting only for
+      // it to become connected leaves attach() pending forever in exactly
+      // those cases. Wait for connected, the four RTL4b terminal states
+      // (CLOSING has no RTL3 handler at all, so this listener is the only
+      // way this wait notices it), or the attach completer, which
       // handleConnectionFailed (RTL3a), handleConnectionClosed (RTL3b) and
       // handleConnectionSuspended (RTL3c) already complete with an error.
-      await Future.any<void>([
-        _connection.on(ConnectionEvent.connected).first,
-        _connection.on(ConnectionEvent.failed).first,
-        _connection.on(ConnectionEvent.closing).first,
-        _connection.on(ConnectionEvent.closed).first,
-        _connection.on(ConnectionEvent.suspended).first,
-        completer.future,
-      ]);
+      //
+      // This uses one subscription on the connection's shared state-change
+      // stream, cancelled in `finally` on every exit path, rather than
+      // `Future.any` over several `_connection.on(event).first` futures:
+      // `Future.any` never cancels the futures it doesn't pick, so the
+      // "losing" futures' listeners on that shared stream would otherwise
+      // dangle past every ordinary attach() call.
+      final raceCompleter = Completer<void>();
+      void settleRace() {
+        if (!raceCompleter.isCompleted) {
+          raceCompleter.complete();
+        }
+      }
+
+      final subscription = _connection.on().listen((change) {
+        switch (change.current) {
+          case ConnectionState.connected:
+          case ConnectionState.failed:
+          case ConnectionState.closing:
+          case ConnectionState.closed:
+          case ConnectionState.suspended:
+            settleRace();
+          case ConnectionState.initialized:
+          case ConnectionState.connecting:
+          case ConnectionState.disconnected:
+            break;
+        }
+      });
+      unawaited(
+        completer.future.then(
+          (_) => settleRace(),
+          onError: (Object error, StackTrace stackTrace) {
+            if (!raceCompleter.isCompleted) {
+              raceCompleter.completeError(error, stackTrace);
+            }
+          },
+        ),
+      );
+
+      try {
+        await raceCompleter.future;
+      } finally {
+        await subscription.cancel();
+      }
 
       // RTL4b: the connection settled somewhere an ATTACH cannot be sent.
       if (_connection.state != ConnectionState.connected) {
         _attachCompleter = null;
-        completer.future.ignore();
         throw AblyException(
           errorInfo: ErrorInfo(
             code: 90001,
