@@ -199,13 +199,24 @@ class RealtimeChannelsImpl implements RealtimeChannels {
   /// Spec: RTS4, RTS4a
   @override
   Future<void> release(String name) async {
-    final channel = _channels[name];
-    if (channel != null) {
-      _logger.debug('Channel released', {'channel': name});
-      // Detach the channel if it's attached
+    final channel = _channels.remove(name);
+    if (channel == null) return;
+
+    _logger.debug('Channel released', {'channel': name});
+
+    // RTS4a: best-effort detach. detach() raises 90001 from FAILED
+    // (RTL5b) and can reject for any other reason the transport supplies;
+    // release() is idempotent and must still drop and dispose the channel.
+    try {
       await channel.detach();
-      _channels.remove(name);
+    } on AblyException catch (e) {
+      _logger.debug('Ignoring detach error while releasing channel', {
+        'channel': name,
+        if (e.errorInfo?.code != null) 'code': e.errorInfo!.code,
+      });
     }
+
+    channel.dispose();
   }
 
   /// Returns an iterator over all channel names.
