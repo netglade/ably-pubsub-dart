@@ -44,12 +44,13 @@ that patch set:
   test/realtime/unit/connection/unknown_wire_actions_test.dart
   test/rest/unit/types/error_detail_test.dart
 
-One further test file is added on this integration branch only — it is
-not part of any single patch above and so is never itself raised as an
-upstream PR, but exercises patches A and E together (see PATCHES.md and
-docs/fork.md's no-regression evidence):
+Two further test files are added on this integration branch only — neither
+is part of any single patch above and so neither is ever itself raised as
+an upstream PR, but each exercises two patches together (see PATCHES.md
+and docs/fork.md's no-regression evidence):
 
   test/realtime/unit/channels/channel_unknown_action_and_version_annotations_test.dart
+  test/realtime/unit/channels/channel_release_pending_attach_test.dart
 
 `pubspec.yaml`'s version is additionally stamped `0.2.0+netglade.1` (not
 part of any patch), so `pubspec.lock` and `dart pub deps` in the chat
