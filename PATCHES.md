@@ -16,10 +16,13 @@ upstream PR URL or, until the deferred GitHub hand-off in `docs/fork.md`
 opens it, the exact sentinel "not yet opened".
 
 `Commit` is each branch's current **tip**, not necessarily its whole
-patch: branches b, c, d and e each carry two commits (the original patch
-plus one review fix round; only branch a is a single commit — see
-`docs/fork.md`'s "Fork maintenance notes"), so read a branch's own log
-for its full history, not just the sha cited here.
+patch: branches b, d and e each carry two commits (the original patch
+plus one review fix round) and branch c carries three (the original
+patch, one review fix round, and a further fix from final review that
+settles in-flight attach()/detach() operations in dispose()); only
+branch a is a single commit — see `docs/fork.md`'s "Fork maintenance
+notes". Read a branch's own log for its full history, not just the sha
+cited here.
 
 | | Defect | Evidence (upstream line numbers) | Fix | Branch | Commit (tip) | Upstream PR | Merged? |
 |---|---|---|---|---|---|---|---|
@@ -36,11 +39,14 @@ conflict. A dedicated integration-only test —
 — exercises both together in one batch and cannot pass on either patch
 branch alone; see `docs/fork.md`'s no-regression evidence.
 
-Note on B×C: patch B's `attach()` (the connection wait) and patch C's
-`release()`/`dispose()` share no file, but do share the channel's lifecycle
-— releasing a channel that is still ATTACHING while the connection has not
-yet reached CONNECTED left a concurrent `attach()` call parked forever
-until row C's `dispose()` fix above. A second integration-only test —
+Note on B×C: patch B's `attach()` and patch C's `dispose()` now both touch
+`lib/src/impl/realtime_channel_impl.dart`, at distinct anchors (`attach()`'s
+connection wait versus `dispose()`'s pending-operations fix), so the merge
+was textually clean with no conflict — but before row C's `dispose()` fix
+above, releasing a channel that was still ATTACHING while the connection
+had not yet reached CONNECTED left a concurrent `attach()` call parked
+forever, a defect the two patches share by lifecycle rather than by file.
+A second integration-only test —
 `test/realtime/unit/channels/channel_release_pending_attach_test.dart` —
 covers this and, like the A×E test, only makes sense with both patches
 present.
