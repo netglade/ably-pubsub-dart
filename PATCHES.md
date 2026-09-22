@@ -12,8 +12,9 @@ patch also lives on its own branch off `upstream-0.2.0` so it can be
 raised as a standalone upstream PR.
 
 The table is complete: every patch names its commit, and either its
-upstream PR URL or, until the deferred GitHub hand-off in `docs/fork.md`
-opens it, the exact sentinel "not yet opened".
+upstream PR URL or the exact sentinel "not yet opened". The GitHub
+hand-off in `docs/fork.md` ran on 2026-09-22 and opened A's PR; B to E
+are still to be raised.
 
 `Commit` is each branch's current **tip**, not necessarily its whole
 patch: branches b, d and e each carry two commits (the original patch
@@ -26,7 +27,7 @@ cited here.
 
 | | Defect | Evidence (upstream line numbers) | Fix | Branch | Commit (tip) | Upstream PR | Merged? |
 |---|---|---|---|---|---|---|---|
-| A | Realtime-delivered `Message` drops `version` and `annotations` | `lib/src/impl/realtime_channel_impl.dart:1100-1112` hand-builds `Message` with nine named args, omitting both, bypassing the TM2s1/TM2s2/TM2u defaults at `lib/src/message/message.dart:51-72` | Additive patch at the call site | `patch/a-realtime-message-version-annotations` | `4c9013207838` | not yet opened | no |
+| A | Realtime-delivered `Message` drops `version` and `annotations` | `lib/src/impl/realtime_channel_impl.dart:1100-1112` hand-builds `Message` with nine named args, omitting both, bypassing the TM2s1/TM2s2/TM2u defaults at `lib/src/message/message.dart:51-72` | Additive patch at the call site | `patch/a-realtime-message-version-annotations` | `4c9013207838` | https://github.com/ably/ably-pubsub-dart/pull/18 | no |
 | B | `attach()` never settles when the connection settles in a terminal state | `lib/src/impl/realtime_channel_impl.dart:650` awaits `_connection.on(connected).first` only, with no FAILED/CLOSING/CLOSED/SUSPENDED branch, so an RTL4b outcome leaves the caller parked forever even though `_failPendingOperations` has already errored the attach completer | A single subscription on the connection's shared state-change stream races CONNECTED, the four RTL4b terminal states and the attach completer, cancelled in `finally` on every exit (not `Future.any`, which would leak a listener per losing state on every ordinary attach); an RTL4b state re-check follows | `patch/b-attach-connection-wait` | `976d1b126358` | not yet opened | no |
 | C | `release()` throws 90001 on a FAILED channel, leaks the state-change controller, and can strand a concurrent `attach()` | `lib/src/impl/realtime_channels_impl.dart:201-209` awaits `channel.detach()` unguarded; `detach()` raises 90001 from FAILED at `realtime_channel_impl.dart:683-691`, so `_channels.remove()` at line 207 never runs and `dispose()` is never called; separately, releasing a channel that is still ATTACHING with the connection not yet CONNECTED leaves a concurrent `attach()` call parked forever, because `detach()`'s RTL5l path transitions straight to DETACHED without failing the pending attach completer | Unconditional removal from `_channels` up front; `detach()` wrapped in try/`on AblyException` (logged, swallowed); `dispose()` moved into `finally` so it runs even if `detach()` throws something else; `dispose()` also now fails any pending attach()/detach() with 90001 before closing the state-change controller, so release() always leaves the channel dead — removed, detached best-effort, disposed, and with its in-flight operations settled rather than orphaned | `patch/c-release-idempotent` | `5ed841639dc1` | not yet opened | no |
 | D | `ErrorInfo` has no `detail` | `lib/src/error/error_info.dart:9-16` declares exactly `code`, `statusCode`, `message`, `href`, `requestId`, `cause`, so the TI6 `detail` map is discarded | Add `Map<String, String>? detail` (TI6); carried through the REST mapping at `lib/src/impl/http/http_client.dart:442` (unchanged — it already just calls `ErrorInfo.fromMap`) | `patch/d-error-info-detail` | `960eb5245459` | not yet opened | no |
