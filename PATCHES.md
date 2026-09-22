@@ -6,14 +6,15 @@ published `ably` 0.2.0; the two commits between the `v0.2.0` tag and this
 one touch only README.md, CONTRIBUTING.md and pubspec.yaml's repository
 URLs for the repo rename, never `lib/`.
 
-Integration branch: `netglade/chat-v0.2.0`, which now carries all five
-patches (`git merge --no-ff`, in A-B-C-D-E order — see its log). Every
+Integration branch: `netglade/chat-v0.2.0`, which now carries all six
+patches (`git merge --no-ff`, in A-B-C-D-E-F order — see its log). Every
 patch also lives on its own branch off `upstream-0.2.0` so it can be
 raised as a standalone upstream PR.
 
-The table is complete: every patch names its commit and its upstream PR
-URL. The GitHub hand-off in `docs/fork.md` ran on 2026-09-22 and all five
-PRs are open against `ably/ably-pubsub-dart`; none is merged yet, so the
+The table is complete: every patch names its commit, and every patch but
+F names its upstream PR URL. The GitHub hand-off in `docs/fork.md` ran on 2026-09-22 and the five
+PRs it raised are open against `ably/ably-pubsub-dart`; patch F postdates
+that hand-off and has not been raised yet. None is merged, so the
 `Merged?` column still reads `no` throughout and this fork stays the
 dependency the chat SDK consumes.
 
@@ -22,7 +23,7 @@ patch: branches b, d and e each carry two commits (the original patch
 plus one review fix round) and branch c carries three (the original
 patch, one review fix round, and a further fix from final review that
 settles in-flight attach()/detach() operations in dispose()); only
-branch a is a single commit — see `docs/fork.md`'s "Fork maintenance
+branches a and f are single commits — see `docs/fork.md`'s "Fork maintenance
 notes". Read a branch's own log for its full history, not just the sha
 cited here.
 
@@ -33,6 +34,7 @@ cited here.
 | C | `release()` throws 90001 on a FAILED channel, leaks the state-change controller, and can strand a concurrent `attach()` | `lib/src/impl/realtime_channels_impl.dart:201-209` awaits `channel.detach()` unguarded; `detach()` raises 90001 from FAILED at `realtime_channel_impl.dart:683-691`, so `_channels.remove()` at line 207 never runs and `dispose()` is never called; separately, releasing a channel that is still ATTACHING with the connection not yet CONNECTED leaves a concurrent `attach()` call parked forever, because `detach()`'s RTL5l path transitions straight to DETACHED without failing the pending attach completer | Unconditional removal from `_channels` up front; `detach()` wrapped in try/`on AblyException` (logged, swallowed); `dispose()` moved into `finally` so it runs even if `detach()` throws something else; `dispose()` also now fails any pending attach()/detach() with 90001 before closing the state-change controller, so release() always leaves the channel dead — removed, detached best-effort, disposed, and with its in-flight operations settled rather than orphaned | `patch/c-release-idempotent` | `5ed841639dc1` | https://github.com/ably/ably-pubsub-dart/pull/20 | no |
 | D | `ErrorInfo` has no `detail` | `lib/src/error/error_info.dart:9-16` declares exactly `code`, `statusCode`, `message`, `href`, `requestId`, `cause`, so the TI6 `detail` map is discarded | Add `Map<String, String>? detail` (TI6); carried through the REST mapping at `lib/src/impl/http/http_client.dart:442` (unchanged — it already just calls `ErrorInfo.fromMap`) | `patch/d-error-info-detail` | `960eb5245459` | https://github.com/ably/ably-pubsub-dart/pull/21 | no |
 | E | Wire enums throw `ArgumentError` on unknown values, from inside the transport handler | `message_action.dart:63`, `annotation_action.dart:34`, `presence_action.dart:53` and `:87`, `protocol_message.dart:63` | Return `null` for unknown values (each decoder); ignore-with-log at every realtime call site, keyed off the raw wire value (not just the decoded result being `null`) so an absent field is never mistaken for an unrecognised one — the protocol-message level uses a new `unrecognisedAction` field for this distinction (RTF1, CHA-M4m5) | `patch/e-wire-enum-unknown-values` | `c0abe370f0d7` | https://github.com/ably/ably-pubsub-dart/pull/22 | no |
+| F | The transport interface is public API, but only a `@visibleForTesting` constructor accepts one | `lib/ably.dart:108` exports `websocket_client.dart`, so `WebSocketClient` and `WebSocketConnection` are public API; but the RTC1a factory at `lib/src/realtime/realtime_client.dart:27-30` takes only `options` and `key`, and the only constructor that accepts a transport is `RealtimeClient.forTesting` at `:52-58`. An application that must supply its own — a browser, where `dart:io` compiles to a stub that throws the moment a socket is opened — can therefore only reach the seam through `forTesting`, which raises `invalid_use_of_visible_for_testing_member` outside a test | Add `WebSocketClient? webSocketClient` to the RTC1a factory and pass it through to `RealtimeClientImpl`, which already accepted one. Nothing changes when it is omitted | `patch/f-public-transport-seam` | `2145a63899fc` | not yet opened | no |
 
 Note on the merge: patches A and E both touch `_handleMessage`'s per-message
 decode loop, at distinct anchors, so the merge was textually clean with no

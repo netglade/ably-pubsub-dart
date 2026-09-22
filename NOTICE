@@ -14,8 +14,8 @@ between the published `v0.2.0` tag and this fork point touch only
 README.md, CONTRIBUTING.md and pubspec.yaml's repository URLs (a repo
 rename), never `lib/`. It is maintained by netglade for the Ably Chat
 Flutter SDK. Every change is also offered upstream as a pull request, one
-patch per branch; all five have landed on this integration branch
-(netglade/chat-v0.2.0). See PATCHES.md for the per-patch branch, commit
+patch per branch — patch F postdates that hand-off and is not raised yet;
+all six have landed on this integration branch (netglade/chat-v0.2.0). See PATCHES.md for the per-patch branch, commit
 and upstream PR status.
 
 The following files have been modified by netglade to implement the
@@ -31,6 +31,8 @@ patch set enumerated in PATCHES.md:
   lib/src/message/message_action.dart
   lib/src/presence/presence_action.dart
   lib/src/realtime/protocol_message.dart
+  lib/src/realtime/realtime_client.dart
+  test/realtime/unit/client/realtime_client_test.dart
   test/realtime/unit/connection/forwards_compatibility_test.dart
 
 The following files have been added by netglade to implement and test
